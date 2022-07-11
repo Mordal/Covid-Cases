@@ -1,4 +1,3 @@
-.app-component{
-    margin: 5rem;
-    background-color: coral;
+.container {
+    color: rgb(3, 117, 18)  !important;
 }
