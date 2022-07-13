@@ -14,7 +14,7 @@
     <div class="form-floating mb-3">
             
         <select id="floatingMonth" name="month" class="form-select" formControlName="month">
-            <option *ngFor="let month of months" value="{{month}}">{{month}}</option>
+            <option *ngFor="let month of months; let i = index" value="{{i}}">{{month}}</option>
         </select>
 
         <label for="floatingMonth">Select a month for the year 2020</label>
@@ -26,6 +26,6 @@
 
 </form>
 
-<div class="info"> 
+<div *ngIf="country.month" class="info"> 
     <app-info></app-info>
 </div>

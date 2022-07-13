@@ -1,8 +1,11 @@
-import { SubscriptionLoggable } from "rxjs/internal/testing/SubscriptionLoggable";
+
 
 export interface Country{
     name:string;
-    independent: Boolean;
+    population:BigInteger
+    vaccinesUsed: Array<string>
+    month:number
+    confirmedCases: Array<Number>
 }
 
 
