@@ -9,6 +9,8 @@ import { InfoComponent } from './_components/info/info.component';
 
 import { HttpClientModule} from '@angular/common/http'
 
+
+
 @NgModule({
   declarations: [
     AppComponent,

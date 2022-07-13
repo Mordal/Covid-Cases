@@ -1,7 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { range } from 'rxjs';
 import { CountriesService } from 'src/app/services/countries.service';
+import { VaccinesService } from 'src/app/services/vaccines.service';
 import { Country } from 'src/app/_models/country';
+
 
 @Component({
   selector: 'app-home',
@@ -11,13 +14,17 @@ import { Country } from 'src/app/_models/country';
 export class HomeComponent implements OnInit {
 
   formCovidCases!: FormGroup;
-  country!: Country;
+  countryList!: string[]
+  months!: string[]
+  
   
   constructor(
     private formBuilder: FormBuilder,
-    private countriesService: CountriesService
-
+    private countriesService: CountriesService,
+    private countryCSV: VaccinesService
     ) { }
+
+
 
   ngOnInit(): void {
     this.formCovidCases = this.formBuilder.group({
@@ -26,18 +33,18 @@ export class HomeComponent implements OnInit {
     })
 
     this.countriesService.getCountries().subscribe({
-      next: (countries) => {
-        console.log(countries[0]);
-        console.log(typeof countries[0])
-        const test = JSON.stringify(countries[0])
-        const test2 = JSON.parse(test).name
-        console.log(test2)
-
-        for (let i = 0;i<countries.length; i++){
-          console.log(countries[i]);
+      next: (rawCountries) => {
+        let countryList = new Array();
+        for (let i = 0; i<rawCountries.length; i++){
+          countryList.push(JSON.parse(JSON.stringify(rawCountries[i])).name);
         }
+        this.countryList = countryList;
       }
     })
+    
+    this.months = this.getMonthList();
+
+
   }
 
   onSubmit(){
@@ -45,10 +52,33 @@ export class HomeComponent implements OnInit {
       return;
     
     console.log(this.formCovidCases.value)
+    console.log(this.formCovidCases.get(["country"])?.value)
+    console.log(this.formCovidCases.get(["month"])?.value)
+
+    this.countryCSV.getVaccines(this.formCovidCases.get(["country"])?.value).subscribe({
+      next:(csvFile) => {
+        console.log("RESPONSE: ")
+        console.log(csvFile)
+      },
+      error: (err:any) => {
+        console.log("ERROR - No vaccination data for this country")
+        console.log(err)
+      }
+    })
+
+
+  }
+
+
+  getMonthList():string[]{
+    let monthList = new Array();
+    for (let i =0; i <12 ; i++){
+      monthList.push(new Date(2022, i).toLocaleString('en', { month: 'long' }))
+    }
+    return monthList;
   }
 
 }
-function pick(arg0: any, arg1: {}): any {
-  throw new Error('Function not implemented.');
-}
+
+
 

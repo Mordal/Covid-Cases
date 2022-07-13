@@ -5,9 +5,6 @@ export interface Country{
     independent: Boolean;
 }
 
-export interface Countries{
-    countryiesList: Array<Country>
-}
 
 
 
