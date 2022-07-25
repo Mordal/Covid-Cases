@@ -1,1 +1,18 @@
-<p>info works!</p>
+
+<div>
+    <h5>Country: </h5>{{country.name}} <br>
+    <h5>Population: </h5> {{country.population}} <br>
+    <h5>Currently used vaccines: </h5> 
+    <ul>
+        <li *ngFor = "let vaccine of country.vaccinesUsed">{{vaccine}}</li>
+    </ul>
+</div>
+
+<div class="chart-wrapper">
+    <canvas baseChart
+        [type]="'line'"
+        [datasets]="chartData"
+        [labels]="chartLabels"
+        [options]="chartOptions">
+    </canvas>
+  </div>

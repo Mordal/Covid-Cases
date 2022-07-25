@@ -5,7 +5,7 @@ export interface Country{
     population:BigInteger
     vaccinesUsed: Array<string>
     month:number
-    confirmedCases: Array<Number>
+    confirmedCases: Array<number>
 }
 
 

@@ -7,8 +7,8 @@ import { AppComponent } from './app.component';
 import { HomeComponent } from './_pages/home/home.component';
 import { InfoComponent } from './_components/info/info.component';
 
-import { HttpClientModule} from '@angular/common/http'
-
+import { HttpClientModule} from '@angular/common/http';
+import { NgChartsModule } from 'ng2-charts';
 
 
 @NgModule({
@@ -22,7 +22,8 @@ import { HttpClientModule} from '@angular/common/http'
     AppRoutingModule,
     FormsModule,
     ReactiveFormsModule,
-    HttpClientModule
+    HttpClientModule,
+    NgChartsModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

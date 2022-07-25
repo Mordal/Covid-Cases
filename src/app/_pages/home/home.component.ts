@@ -1,5 +1,7 @@
+
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { connect } from 'rxjs';
 import { ConfirmedCasesService } from 'src/app/services/confirmedCases.service';
 import { CountriesService } from 'src/app/services/countries.service';
 import { VaccinesService } from 'src/app/services/vaccines.service';
@@ -17,14 +19,14 @@ export class HomeComponent implements OnInit {
   formCovidCases!: FormGroup
   countryList!: string[]
   months!: string[]
-  country!:Country
+  country!: Country
   
   
   constructor(
     private formBuilder: FormBuilder,
     private countriesService: CountriesService,
     private countryCSV: VaccinesService,
-    private confirmedCases: ConfirmedCasesService
+    private confirmedCases: ConfirmedCasesService,
     ) { }
 
 
@@ -69,15 +71,26 @@ export class HomeComponent implements OnInit {
     console.log(this.country.month)
 
 
-    //getting used vaccines from endpoint
+
+    //getting last used vaccines from endpoint
     this.countryCSV.getVaccines(this.formCovidCases.get(["country"])?.value).subscribe({
       next:(csvFile) => {
-        console.log("RESPONSE: ")
-        //console.log(csvFile)
+        let lines = csvFile.split("\n"); 
+        let headers = lines[0].split(",")
+        let vaccineIndex = 0
+        headers.forEach((header:string, index:number) =>{
+          if (header === "vaccine"){
+            vaccineIndex = index
+          }
+        })
+        let usedVaccines = this.splitCsvRow(lines[lines.length - 2])
+        this.country.vaccinesUsed = usedVaccines[vaccineIndex].split(",")
+        console.log(this.country.vaccinesUsed)
       },
       error: (err:any) => {
         console.log("ERROR - No vaccination data for this country")
         console.log(err)
+        this.country.vaccinesUsed = ["NO DATA"]
       }
     })
 
@@ -90,13 +103,23 @@ export class HomeComponent implements OnInit {
     })
 
     //getting confirmed Covid cases
-    this.confirmedCases.getConfirmedCasesByCountryAndMonth(this.country.name,this.country.month)
+    this.confirmedCases.getConfirmedCasesByCountryAndMonth(this.country.name,this.country.month).subscribe({
+      next:(response) => {
+        let confirmedCasesInMonth = new Array();
+        let allDays = JSON.parse(JSON.stringify(response))
+        allDays.forEach((day: { Cases: number; }) => {
+          confirmedCasesInMonth.push(day.Cases)
+        });
+        this.country.confirmedCases = confirmedCasesInMonth
+        //console.log(this.country.confirmedCases)
+      }
+    })    
     
 
   }
 
 
-  //function
+  //functions
   getMonthList():string[]{
     let monthList = new Array();
     for (let i =0; i <12 ; i++){
@@ -105,8 +128,26 @@ export class HomeComponent implements OnInit {
     return monthList;
   }
 
+  splitCsvRow(row: string):string[]{
+    //splitting is done by first replacing the "," characters by "|", but only those 
+    // which are not in between quotes; these "," need to stay intact.
+    let string = ""
+    let quotes= false
+    for(let character of row){
+      if (character == "," && quotes == false){
+        character = "|"
+      }
+      if (character == '"'){
+        character = ""
+        if (quotes == false){
+          quotes = true
+        }else{
+          quotes = false
+        }
+      }
+      string += character
+    }
+  return string.split("|")
+  }
 
 }
-
-
-
