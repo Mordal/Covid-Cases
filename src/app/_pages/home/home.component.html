@@ -26,6 +26,11 @@
 
 </form>
 
-<div *ngIf="country.confirmedCases && country.population"  class="info"> 
-    <app-info [country]= "country"> </app-info>
+<div *ngIf="readyForChart == true"  class="info"> 
+    <app-info [country]= "country"></app-info>
 </div>
+
+<div *ngIf="errorMessage !=''" class="error">
+    <p>{{errorMessage}}</p>
+</div>
+

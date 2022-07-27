@@ -11,6 +11,8 @@ import { HttpClientModule} from '@angular/common/http';
 import { NgChartsModule } from 'ng2-charts';
 
 
+
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -24,6 +26,7 @@ import { NgChartsModule } from 'ng2-charts';
     ReactiveFormsModule,
     HttpClientModule,
     NgChartsModule,
+
   ],
   providers: [],
   bootstrap: [AppComponent]

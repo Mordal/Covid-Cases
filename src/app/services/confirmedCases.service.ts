@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { first } from 'rxjs';
+import { DateModel } from '../_models/dateModel';
+
 
 @Injectable({
   providedIn: 'root'
@@ -14,29 +15,14 @@ export class ConfirmedCasesService {
   constructor(private http: HttpClient) { }
   
   getConfirmedCasesByCountryAndMonth(country: string, month : number){
-    const firstDay = this.firstDayOfMonthISOFormat(month)
-    const lastDay = this.lastDayOfMonthISOFormat(month)
-
-    console.log(firstDay)
-    console.log(lastDay)
-
-    return this.http.get(`${this.endpointConfirmedCasses}/${country}/status/confirmed/live?from=${firstDay}&to=${lastDay}`, {responseType: 'json'})
-
-
+    const firstDay = DateModel.firstDayOfMonthISOFormat(month)
+    const lastDay = DateModel.lastDayOfMonthISOFormat(month)
+    return this.getConfirmedCasesByCountryAndDays(country,firstDay,lastDay)
+  
   }
 
-  //It whould be hard to transform the local-time-zoned Date() to an ISO format
-    //using the .toISOdate() methode. because of the timezone offset.
-    //I opted to construct the ISO format myself
-  firstDayOfMonthISOFormat(month : number) : string {
-    let monthNumb = (month < 10 ) ? "0"+(Number(month)+1) : (Number(month)+1)
-    return "2020-"+monthNumb+"-01T00:00:00Z"
+  getConfirmedCasesByCountryAndDays(country: string, firstDay: string, lastDay: string){
+    return this.http.get(`${this.endpointConfirmedCasses}/${country}/status/confirmed/live?from=${firstDay}&to=${lastDay}`, {responseType: 'json'})
   }
   
-  lastDayOfMonthISOFormat(month : number) : string {
-    let lastDay = new Date(2020,Number(month)+1,0).getDate()
-    let monthNumb = (month < 10 ) ? "0"+(Number(month)+1) : (Number(month)+1)
-    return "2020-"+monthNumb+"-"+lastDay+"T00:00:00Z"
-  }
-
 }
