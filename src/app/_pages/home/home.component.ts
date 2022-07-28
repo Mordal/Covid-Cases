@@ -22,7 +22,7 @@ export class HomeComponent implements OnInit {
   months!: string[]
   country!: Country
   errorMessage!: string
-  confirmedCasesInDay !: Map<string, number>
+  confirmedCasesByDayToBeSorted !: Map<string, number>
   checkExecutionAllWeeks !: number
   readyForChart !: Boolean
   progress !: Progress
@@ -58,8 +58,10 @@ export class HomeComponent implements OnInit {
     //getting all months in a year
     this.months = DateModel.getMonthList();
 
-    //initiating this.country as Country
+    //initiating this.country
     this.country = {} as Country
+    //initiating this.progress
+    this.progress = {} as Progress
   }
 
   onSubmit(){
@@ -113,14 +115,11 @@ export class HomeComponent implements OnInit {
     //getting confirmed Covid cases
     this.confirmedCases.getConfirmedCasesByCountryAndMonth(this.country.name,this.country.month).subscribe({
       next:(response) => {
-        //initialise new Array to be filled in the forEach loop
-        let confirmedCasesInMonth = new Array();
         // parsing to readable JSON object
-        let allDays = JSON.parse(JSON.stringify(response))
-        allDays.forEach((day: { Cases: number; }) => {
-          confirmedCasesInMonth.push(day.Cases)
-        });
-        this.country.confirmedCases = confirmedCasesInMonth
+        let allObjects = JSON.parse(JSON.stringify(response))
+        this.progress.total = allObjects.length
+        //values of the returned Map() are loaded in country.confirmedCases
+        this.country.confirmedCases = [...this.getConfirmedCasesFromObjects(allObjects).values()]
         //allowing to initiate the chart.html component
         this.readyForChart = true
       },
@@ -143,15 +142,13 @@ export class HomeComponent implements OnInit {
 
 //for some countries (USA for example) we need to retrieve the data week by week
 confirmedCasesByWeek(){
-  this.country.confirmedCases = []
-  this.progress = {} as Progress
   // all calls are done at the same time, the responses can be in a wrong order, 
-    // I needed to add a key (with date info) to the data
-  this.confirmedCasesInDay = new Map<string, number>()
+    // the date-key is used to sort the data
+  this.confirmedCasesByDayToBeSorted = new Map<string, number>()
   let lastDayOfMonth = DateModel.lastDayOfMonth(this.country.month)
   this.checkExecutionAllWeeks = 0
   
-  // for each week in the month, get the confirmed cases
+  // for each week in the month -> get the confirmed cases
   for (let i = 0 ; i < lastDayOfMonth; i+=8){
     //first day of first week = 1, first days of other weeks = i+8
     let firstDay = (i < 8) ? (i+1) : i
@@ -162,31 +159,15 @@ confirmedCasesByWeek(){
     this.confirmedCases.getConfirmedCasesByCountryAndDays(this.country.name,DateModel.dayOfMonthISOFormat(this.country.month,firstDay),DateModel.dayOfMonthISOFormat(this.country.month,lastDay))
     .subscribe({
       next:(response) => {
-        let confirmedCasesInDay = new Map<string, number>()
-        let allDays = JSON.parse(JSON.stringify(response))
-        this.progress.total = allDays.length
-        //save the cases with the date as key()
-        allDays.forEach((day: { Cases: number, Date: string }, index: number) => {
-          //if date already exist, new cases are added to this record
-          if (confirmedCasesInDay.has(day.Date)){
-            this.progress.date = day.Date
-            this.progress.currentProccessing = index
-            let totalCases = Number(confirmedCasesInDay.get(day.Date)) + day.Cases
-            confirmedCasesInDay.delete(day.Date)
-            confirmedCasesInDay.set(day.Date, totalCases)
-          } else{
-            //if date doesn't exist yet, new record is created
-            confirmedCasesInDay.set(day.Date, day.Cases)
-          }
-        });
-        //adding all records to confirmedCases
-        this.confirmedCasesInDay = new Map<string, number>([...this.confirmedCasesInDay,...confirmedCasesInDay])
-        
+        // parsing to readable JSON object
+        let allObjects = JSON.parse(JSON.stringify(response))
+        //adding all returned (from this.getConfirmedCasesFromObjects()) records to this.confirmedCasesByDayToBeSorted
+        this.confirmedCasesByDayToBeSorted = new Map<string, number>([...this.confirmedCasesByDayToBeSorted,...this.getConfirmedCasesFromObjects(allObjects)])
         //when all requests have returned a response, checkExecutionsAllWeeks is now = 3 (there are always 4 weeks in a month)
         if(this.checkExecutionAllWeeks == 3){
           //sorting all entries before populating the country.confirmedCases
-          this.confirmedCasesInDay = new Map([...this.confirmedCasesInDay.entries()].sort())
-          this.country.confirmedCases = [...this.confirmedCasesInDay.values()]
+          this.confirmedCasesByDayToBeSorted = new Map([...this.confirmedCasesByDayToBeSorted.entries()].sort())
+          this.country.confirmedCases = [...this.confirmedCasesByDayToBeSorted.values()]
           //allowing to initiate the chart.html component
           this.readyForChart = true
         }
@@ -194,6 +175,31 @@ confirmedCasesByWeek(){
       }
     })
   }
+}
+
+getConfirmedCasesFromObjects(allObjects:any){
+  // for some countries (example: China) the returned array has multiple objects for 1 day
+    // I needed to add a key (with date info) to the data
+    // this key is used to determine if data needs to be added to data of the same day
+  
+  //this.progress is for visualising the progress
+  this.progress.total = allObjects.length
+  //initialise new Map to be filled in the forEach loop
+  let totalConfirmedCases = new Map<string, number>()
+  allObjects.forEach((day: { Cases: number; Date: string }, index: number) => {
+    if (totalConfirmedCases.has(day.Date)){
+      this.progress.date = day.Date
+      this.progress.currentProccessing = index
+      //adding cases to cases of the same day
+      let totalCases = Number(totalConfirmedCases.get(day.Date)) + day.Cases
+      totalConfirmedCases.delete(day.Date)
+      totalConfirmedCases.set(day.Date, totalCases)
+    } else{
+      //if date doesn't exist yet, new record is created
+      totalConfirmedCases.set(day.Date, day.Cases)
+    }
+  });
+  return totalConfirmedCases
 }
 
   splitCsvRow(row: string):string[]{
