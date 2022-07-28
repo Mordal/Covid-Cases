@@ -44,8 +44,9 @@ export class ChartComponent implements OnInit {
           display: true,
           position: 'right',
           ticks: {
+            //this formats the right y-axis labels
             callback: function(value) {
-              return Number(value).toFixed(4) + " %";
+              return Number(value).toPrecision(2) + " %";
             }
           },
           grid: {
