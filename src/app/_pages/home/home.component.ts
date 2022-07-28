@@ -6,6 +6,7 @@ import { CountriesService } from 'src/app/services/countries.service';
 import { VaccinesService } from 'src/app/services/vaccines.service';
 import { Country } from 'src/app/_models/country';
 import { DateModel } from 'src/app/_models/dateModel';
+import { Progress } from 'src/app/_models/progress';
 
 
 
@@ -24,6 +25,7 @@ export class HomeComponent implements OnInit {
   confirmedCasesInDay !: Map<string, number>
   checkExecutionAllWeeks !: number
   readyForChart !: Boolean
+  progress !: Progress
   
   
   constructor(
@@ -119,12 +121,15 @@ export class HomeComponent implements OnInit {
           confirmedCasesInMonth.push(day.Cases)
         });
         this.country.confirmedCases = confirmedCasesInMonth
-        //allowing to initiate the info.html component with all country data
+        //allowing to initiate the chart.html component
         this.readyForChart = true
       },
+      // when API call returns an error
       error: (err:any) => {
         let errorMessage = JSON.parse(JSON.stringify(err)).error.message
+        //some countries have restrictions on certain months with the folowing error as response
         if (errorMessage == "for performance reasons, please specify a province or a date range up to a week"){
+          //this error-cases are is handled in the following function (example: USA november and december)
           this.confirmedCasesByWeek()
         }else{
           this.errorMessage = errorMessage
@@ -139,6 +144,7 @@ export class HomeComponent implements OnInit {
 //for some countries (USA for example) we need to retrieve the data week by week
 confirmedCasesByWeek(){
   this.country.confirmedCases = []
+  this.progress = {} as Progress
   // all calls are done at the same time, the responses can be in a wrong order, 
     // I needed to add a key (with date info) to the data
   this.confirmedCasesInDay = new Map<string, number>()
@@ -158,16 +164,16 @@ confirmedCasesByWeek(){
       next:(response) => {
         let confirmedCasesInDay = new Map<string, number>()
         let allDays = JSON.parse(JSON.stringify(response))
+        this.progress.total = allDays.length
         //save the cases with the date as key()
         allDays.forEach((day: { Cases: number, Date: string }, index: number) => {
           //if date already exist, new cases are added to this record
           if (confirmedCasesInDay.has(day.Date)){
-            console.log(index + "/" + allDays.length)
-            //console.log("adding cases: " + day.Cases)
+            this.progress.date = day.Date
+            this.progress.currentProccessing = index
             let totalCases = Number(confirmedCasesInDay.get(day.Date)) + day.Cases
             confirmedCasesInDay.delete(day.Date)
             confirmedCasesInDay.set(day.Date, totalCases)
-            //console.log("Total cases: " + totalCases)
           } else{
             //if date doesn't exist yet, new record is created
             confirmedCasesInDay.set(day.Date, day.Cases)
@@ -181,7 +187,7 @@ confirmedCasesByWeek(){
           //sorting all entries before populating the country.confirmedCases
           this.confirmedCasesInDay = new Map([...this.confirmedCasesInDay.entries()].sort())
           this.country.confirmedCases = [...this.confirmedCasesInDay.values()]
-          //allowing to initiate the info.html component with all country data
+          //allowing to initiate the chart.html component
           this.readyForChart = true
         }
         this.checkExecutionAllWeeks +=1

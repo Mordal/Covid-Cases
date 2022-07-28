@@ -9,6 +9,8 @@ import { InfoComponent } from './_components/info/info.component';
 
 import { HttpClientModule} from '@angular/common/http';
 import { NgChartsModule } from 'ng2-charts';
+import { ChartComponent } from './_components/chart/chart.component';
+import { LoadingComponent } from './_components/loading/loading.component';
 
 
 
@@ -18,6 +20,8 @@ import { NgChartsModule } from 'ng2-charts';
     AppComponent,
     HomeComponent,
     InfoComponent,
+    ChartComponent,
+    LoadingComponent,
   ],
   imports: [
     BrowserModule,

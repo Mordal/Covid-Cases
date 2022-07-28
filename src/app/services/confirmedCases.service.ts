@@ -9,7 +9,6 @@ import { DateModel } from '../_models/dateModel';
 
 export class ConfirmedCasesService {
 
-    //"https://api.covid19api.com/country/belgium/status/confirmed/live?from=2020-03-01T00:00:00Z&to=2020-03-31T00:00:00Z"
   private endpointConfirmedCasses = "https://api.covid19api.com/country"
 
   constructor(private http: HttpClient) { }
