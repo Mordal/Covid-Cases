@@ -77,68 +77,79 @@ export class HomeComponent implements OnInit {
     this.country.name = this.formCovidCases.get(["country"])?.value
     this.country.month = this.formCovidCases.get(["month"])?.value
 
-
-    //getting last used vaccines from endpoint
-    this.countryCSV.getVaccines(this.formCovidCases.get(["country"])?.value).subscribe({
-      next:(csvFile) => {
-        //response is in csv-string-format
-          // all lines in the string are separated in the lines[] array
-        let lines = csvFile.split("\n"); 
-          // headers are extracted from first line
-        let headers = lines[0].split(",")
-          // for extensibility reasons, the index number of the column with header 'vaccine' is retrieved
-           // rather than hardcoded
-        let vaccineIndex = 0
-        headers.forEach((header:string, index:number) =>{
-          if (header === "vaccine"){
-            vaccineIndex = index
-          }
-        })
-        // from the last line and in column 'vaccineIndex' we extract the last used vaccines
-        let usedVaccines = this.splitCsvRow(lines[lines.length - 2])
-        // vaccines are split to become a list
-        this.country.vaccinesUsed = usedVaccines[vaccineIndex].split(",")
-      },
-      error: (err:any) => {
-        //when API call returns an error
-        this.country.vaccinesUsed = ["NO DATA"]
-      }
-    })
-
-    //getting population from endpoint
-    this.countriesService.getPopulationByCountry(this.formCovidCases.get(["country"])?.value).subscribe({
-      next:(rawPopulation) => {
-        this.country.population = JSON.parse(JSON.stringify(rawPopulation[0])).population
-      }
-    })
-
-    //getting confirmed Covid cases
-    this.confirmedCases.getConfirmedCasesByCountryAndMonth(this.country.name,this.country.month).subscribe({
-      next:(response) => {
-        // parsing to readable JSON object
-        let allObjects = JSON.parse(JSON.stringify(response))
-        this.progress.total = allObjects.length
-        //values of the returned Map() are loaded in country.confirmedCases
-        this.country.confirmedCases = [...this.getConfirmedCasesFromObjects(allObjects).values()]
-        //allowing to initiate the chart.html component
-        this.readyForChart = true
-      },
-      // when API call returns an error
-      error: (err:any) => {
-        let errorMessage = JSON.parse(JSON.stringify(err)).error.message
-        //some countries have restrictions on certain months with the folowing error as response
-        if (errorMessage == "for performance reasons, please specify a province or a date range up to a week"){
-          //this error-cases are is handled in the following function (example: USA november and december)
-          this.confirmedCasesByWeek()
-        }else{
-          this.errorMessage = errorMessage
-        }
-      }
-    }) 
+    //Set currently used vaccines
+    this.setCurrentlyUsedVaccines(this.country.name)
     
+    //Set population
+    this.setPopulation(this.country.name)
+
+    //Set confirmed cases by country and month
+    this.setConfirmedCasesByCountryAndMonth(this.country.name,this.country.month)
   }
 
+
 // ## FUNCTIONS ## //
+
+setCurrentlyUsedVaccines(country: string){
+  this.countryCSV.getVaccines(country).subscribe({
+    next:(csvFile) => {
+      //response is in csv-string-format
+        // all lines in the string are separated in the lines[] array
+      let lines = csvFile.split("\n"); 
+        // headers are extracted from first line
+      let headers = lines[0].split(",")
+        // for extensibility reasons, the index number of the column with header 'vaccine' is retrieved
+         // rather than hardcoded
+      let vaccineIndex = 0
+      headers.forEach((header:string, index:number) =>{
+        if (header === "vaccine"){
+          vaccineIndex = index
+        }
+      })
+      // from the last line and in column 'vaccineIndex' we extract the last used vaccines
+      let usedVaccines = this.splitCsvRow(lines[lines.length - 2])
+      // vaccines are split to become a list
+      this.country.vaccinesUsed = usedVaccines[vaccineIndex].split(",")
+    },
+    error: (err:any) => {
+      //when API call returns an error
+      this.country.vaccinesUsed = ["NO DATA"]
+    }
+  })
+}
+
+setPopulation(country: string){
+  this.countriesService.getPopulationByCountry(country).subscribe({
+    next:(rawPopulation) => {
+      this.country.population = JSON.parse(JSON.stringify(rawPopulation[0])).population
+    }
+  })
+}
+
+setConfirmedCasesByCountryAndMonth(country: string, month: number){
+  this.confirmedCases.getConfirmedCasesByCountryAndMonth(country,month).subscribe({
+    next:(response) => {
+      // parsing to readable JSON object
+      let allObjects = JSON.parse(JSON.stringify(response))
+      this.progress.total = allObjects.length
+      //values of the returned Map() are loaded in country.confirmedCases
+      this.country.confirmedCases = [...this.getConfirmedCasesFromObjects(allObjects).values()]
+      //allowing to initiate the chart.html component
+      this.readyForChart = true
+    },
+    // when API call returns an error
+    error: (err:any) => {
+      let errorMessage = JSON.parse(JSON.stringify(err)).error.message
+      //some countries have restrictions on certain months with the folowing error as response
+      if (errorMessage == "for performance reasons, please specify a province or a date range up to a week"){
+        //this error-cases are is handled in the following function (example: USA november and december)
+        this.confirmedCasesByWeek()
+      }else{
+        this.errorMessage = errorMessage
+      }
+    }
+  }) 
+}
 
 //for some countries (USA for example) we need to retrieve the data week by week
 confirmedCasesByWeek(){
@@ -201,6 +212,8 @@ getConfirmedCasesFromObjects(allObjects:any){
   });
   return totalConfirmedCases
 }
+
+
 
   splitCsvRow(row: string):string[]{
     //splitting is done by first replacing the "," characters by "|", but only those 
