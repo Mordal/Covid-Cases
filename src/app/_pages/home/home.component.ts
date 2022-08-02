@@ -213,20 +213,18 @@ getConfirmedCasesFromObjects(allObjects:any){
   return totalConfirmedCases
 }
 
-
-
   splitCsvRow(row: string):string[]{
     //splitting is done by first replacing the "," characters by "|", but only those 
     // which are not in between quotes; these "," need to stay intact.
     let string = ""
-    let quotes= false
+    let quotes = false
     for(let character of row){
-      if (character == "," && quotes == false){
+      if (character == "," && !quotes){
         character = "|"
       }
       if (character == '"'){
         character = ""
-        quotes = ( quotes == false) ? true : false
+        quotes = !quotes
       }
       string += character
     }
