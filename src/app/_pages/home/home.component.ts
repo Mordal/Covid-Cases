@@ -226,11 +226,7 @@ getConfirmedCasesFromObjects(allObjects:any){
       }
       if (character == '"'){
         character = ""
-        if (quotes == false){
-          quotes = true
-        }else{
-          quotes = false
-        }
+        quotes = ( quotes == false) ? true : false
       }
       string += character
     }
